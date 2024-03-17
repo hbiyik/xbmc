@@ -64,7 +64,8 @@ public:
   static uint32_t FourCCWithoutAlpha(uint32_t fourcc);
 
   void SetInFenceFd(int fd) { m_inFenceFd = fd; }
-  bool FindPlanes(uint32_t format, uint64_t modifier);
+  bool FindVideoPlane(uint32_t format, uint64_t modifier);
+  bool FindGuiPlane();
   int TakeOutFenceFd()
   {
     int fd{-1};
