@@ -193,6 +193,24 @@
           </constraints>
           <control type="spinner" format="string" />
         </setting>
+        <setting id="videoplayer.gui10bit" type="boolean" parent="videoplayer.useprimedecoder" label="10bit GUI Rendering" help="10bit GUI Rendering">
+          <requirement>HAS_GLES</requirement>
+          <level>3</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.guimodifiers" type="boolean" parent="videoplayer.useprimedecoder" label="Use Plane Modifiers for GUI Rendering" help="Use Plane Modifiers for GUI Rendering">
+          <requirement>HAS_GLES</requirement>
+          <level>3</level>
+          <default>false</default>
+          <control type="toggle" />
+        </setting>
+        <setting id="videoplayer.guialpha" type="boolean" parent="videoplayer.useprimedecoder" label="GUI plane with alpha transparency" help="GUI plane with alpha transparency">
+          <requirement>HAS_GLES</requirement>
+          <level>3</level>
+          <default>true</default>
+          <control type="toggle" />
+        </setting>
       </group>
     </category>
   </section>
