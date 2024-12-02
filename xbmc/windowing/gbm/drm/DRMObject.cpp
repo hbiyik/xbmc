@@ -105,7 +105,7 @@ std::optional<uint64_t> CDRMObject::GetPropertyValue(std::string_view name,
   return {};
 }
 
-std::optional<std::span<uint64_t, 2>> CDRMObject::GetRangePropertyLimits(std::string_view name)
+std::optional<uint64_t*> CDRMObject::GetRangePropertyLimits(std::string_view name)
 {
   auto property = std::find_if(m_propsInfo.begin(), m_propsInfo.end(),
                                [&name](const auto& prop) { return prop->name == name; });
@@ -121,7 +121,7 @@ std::optional<std::span<uint64_t, 2>> CDRMObject::GetRangePropertyLimits(std::st
   if (prop->count_values != 2)
     return {};
 
-  return std::make_optional<std::span<uint64_t, 2>>(prop->values, 2);
+  return prop->values;
 }
 
 bool CDRMObject::SetProperty(const std::string& name, uint64_t value)
