@@ -7578,7 +7578,27 @@ msgctxt "#13469"
 msgid "Enable this option to use hardware acceleration for the AV1 codec. If disabled the CPU will be used instead."
 msgstr ""
 
-#empty strings from id 13468 to 13504
+#: system/settings/settings.xml
+msgctxt "#13470"
+msgid "10bit Rendering Mode"
+msgstr ""
+
+#: system/settings/settings.xml
+msgctxt "#13471"
+msgid "Both GUI and Video"
+msgstr ""
+
+#: system/settings/settings.xml
+msgctxt "#13472"
+msgid "Video Only"
+msgstr ""
+
+#: system/settings/settings.xml
+msgctxt "#13473
+msgid "This option allows to fine tune where the graphics should be rendered in 10bit or 8bit"
+msgstr ""
+
+#empty strings from id 13475 to 13504
 
 #: system/settings/settings.xml
 msgctxt "#13505"
