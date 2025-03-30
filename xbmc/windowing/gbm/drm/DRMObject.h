@@ -40,6 +40,8 @@ public:
 
   bool SetProperty(const std::string& name, uint64_t value);
   bool SupportsProperty(const std::string& name);
+  std::optional<bool> IsPropertyImmutable(std::string_view name);
+  uint64_t GetRangePropertyValue(std::string_view name);
 
 protected:
   explicit CDRMObject(int fd);

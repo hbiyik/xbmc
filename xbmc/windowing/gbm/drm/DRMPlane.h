@@ -50,7 +50,7 @@ private:
   std::unique_ptr<drmModePlane, DrmModePlaneDeleter> m_plane;
 
   std::map<uint32_t, std::vector<uint64_t>> m_modifiers_map;
-  uint32_t m_format{DRM_FORMAT_XRGB8888};
+  uint32_t m_format{DRM_FORMAT_INVALID};
 };
 
 } // namespace GBM
