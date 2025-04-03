@@ -238,7 +238,6 @@ bool CDRMUtils::FindPlanes(uint32_t format, uint64_t modifier) {
     return InitGuiPlane(nullptr, 0);
 
 success:
-    m_gui_plane->SetFormat(guiformat);
     CLog::Log(LOGINFO, "CDRMUtils::{} - Switched GUI Plane to id:{}, video plane to id:{} on crtc id:{} video for format:{}, modifier:{}",
             __FUNCTION__, m_gui_plane->GetId(), m_video_plane->GetId(), m_crtc->GetId(),
             DRMHELPERS::FourCCToString(format), DRMHELPERS::ModifierToString(modifier));
@@ -248,35 +247,82 @@ success:
 // determines the GUI rendering format and selects a plane+crtc for it without considering the future video plane
 bool CDRMUtils::InitGuiPlane(CEGLContextUtils* eglContext, EGLint renderableType) {
     int mode = CServiceBroker::GetSettingsComponent()->GetSettings()->GetInt(SETTING_VIDEOPLAYER_DRM10BITMODE);
-    std::vector<std::unique_ptr<CDRMPlane>> gui_candidates;
 
     m_gui_plane = nullptr;
-    m_video_plane = nullptr;
     m_crtc = nullptr;
-    std::map<std::uint32_t, std::vector<uint32_t>> formats{{DRM_FORMAT_ARGB2101010, {DRM_FORMAT_XRGB2101010, DRM_FORMAT_ARGB2101010}},
-                                                           {DRM_FORMAT_ARGB8888, {DRM_FORMAT_XRGB8888, DRM_FORMAT_ARGB8888}},};
 
-    for (auto const& format : formats) {
+    struct {
+        uint32_t fourcc;
+        int colordepth;
+    } typedef drmformat;
+
+    struct {
+        uint32_t vid;
+        int red;
+        int green;
+        int blue;
+        int alpha;
+    } typedef eglformat;
+
+    struct {
+        drmformat dformat;
+        std::vector<eglformat> eformats;
+    } typedef formatmap;
+
+    std::vector<formatmap> formatmaps = {
+      { { DRM_FORMAT_ABGR16161616F, 16 }, {
+        { DRM_FORMAT_XBGR16161616F, 16, 16, 16, 0},
+        { DRM_FORMAT_ABGR16161616F, 16, 16, 16, 16},
+        }
+      },
+      { { DRM_FORMAT_ARGB2101010, 10 }, {
+        { DRM_FORMAT_XRGB2101010, 10, 10, 10, 0},
+        { DRM_FORMAT_ARGB2101010, 10, 10, 10, 2},
+        }
+      },
+      { { DRM_FORMAT_ARGB8888, 8}, {
+        { DRM_FORMAT_XRGB8888, 8, 8, 8, 0},
+        { DRM_FORMAT_ARGB8888, 8, 8, 8, 8},
+        }
+      },
+      { { DRM_FORMAT_ARGB1555, 5}, {
+        { DRM_FORMAT_XRGB1555, 5, 5, 5, 0},
+        { DRM_FORMAT_ARGB1555, 5, 5, 5, 1},
+        }
+      },
+    };
+
+    mode = 16;
+
+    for (auto const& formatmap : formatmaps) {
         // check if 8bit is forced
-        if (mode && format.first == DRM_FORMAT_ARGB2101010)
+        if (formatmap.dformat.colordepth > mode)
             continue;
 
-        // log if 8bit mode fallback
-        if (!mode && format.first != DRM_FORMAT_ARGB2101010)
-            CLog::Log(LOGWARNING, "CDRMUtils::{} - Requested 10bit GUI or EGL format support is not found, falling back to 8 bit",
-                    __FUNCTION__);
+        // log if fallback
+        if (formatmap.dformat.colordepth < mode)
+            CLog::Log(LOGINFO, "CDRMUtils::{} - GUI is requested to be rendered {}bit but DRM or EGL does not support it, falling back to {}bit",
+                    __FUNCTION__, mode, formatmap.dformat.colordepth);
 
+
+        const eglformat* eformat = nullptr;
         // check if EGL supports a format compatible with the DRM format
-        uint32_t eglformat = DRM_FORMAT_INVALID;
         if(eglContext){
-            for (uint32_t eformat : format.second){
-                if (!eglContext->ChooseConfig(renderableType, eformat))
-                    continue;
-                eglformat = eformat;
+            for (const eglformat &format : formatmap.eformats){
+                if (eglContext->ChooseConfig(renderableType,
+                                             format.vid,
+                                             formatmap.dformat.colordepth >= 10,
+                                             format.red,
+                                             format.green,
+                                             format.blue,
+                                             format.alpha)){
+                    eformat = &format;
+                    break;
+                }
             }
-            if(eglformat == DRM_FORMAT_INVALID){
-                CLog::Log(LOGWARNING, "CDRMUtils::{} - No egl format found for plane format {}",
-                                    __FUNCTION__, DRMHELPERS::FourCCToString(format.first));
+            if(eformat == nullptr){
+                CLog::Log(LOGINFO, "CDRMUtils::{} - GUI plane format {} does not have a compatible EGL config",
+                                    __FUNCTION__, DRMHELPERS::FourCCToString(formatmap.dformat.fourcc));
                 continue;
             }
         }
@@ -287,9 +333,9 @@ bool CDRMUtils::InitGuiPlane(CEGLContextUtils* eglContext, EGLint renderableType
                 continue;
 
             // find a plane satisfies the format and crtc
-            auto guiPlane = std::find_if(m_planes.begin(), m_planes.end(), [&crtc_offset, &format](auto &plane) {
+            auto guiPlane = std::find_if(m_planes.begin(), m_planes.end(), [&crtc_offset, &formatmap](auto &plane) {
                 if (plane->GetPossibleCrtcs() & (1 << crtc_offset))
-                    return (plane->SupportsFormatAndModifier(format.first, DRM_FORMAT_MOD_LINEAR));
+                    return (plane->SupportsFormatAndModifier(formatmap.dformat.fourcc, DRM_FORMAT_MOD_LINEAR));
                 return false;
             });
             if (guiPlane == m_planes.end())
@@ -297,15 +343,24 @@ bool CDRMUtils::InitGuiPlane(CEGLContextUtils* eglContext, EGLint renderableType
 
             m_crtc = m_crtcs[crtc_offset].get();
             m_gui_plane = guiPlane->get();
-            CLog::Log(LOGINFO, "CDRMUtils::{} - Requested GUI plane is found with id: {} and plane format {}, egl format over crtc id: {}",
-                    __FUNCTION__, m_gui_plane->GetId(), DRMHELPERS::FourCCToString(format.first), DRMHELPERS::FourCCToString(eglformat),
-                    m_crtc->GetId());
-            m_gui_plane->SetFormat(format.first);
+            CLog::Log(LOGINFO, "CDRMUtils::{} - GUI plane is found with id: {} and plane format {}, over crtc id: {}",
+                    __FUNCTION__, m_gui_plane->GetId(), DRMHELPERS::FourCCToString(formatmap.dformat.fourcc), m_crtc->GetId());
+            if(eglContext){
+                CLog::Log(LOGINFO, "CDRMUtils::{} - GUI EGL configuration is chosen with vid: {}, R:{} G:{} B:{} A:{} Colordepth:{}",
+                        __FUNCTION__, DRMHELPERS::FourCCToString(eformat->vid),
+                        eformat->red, eformat->green, eformat->blue, eformat->alpha,
+                        formatmap.dformat.colordepth);
+                m_gui_plane->SetFormat(formatmap.dformat.fourcc);
+            }
+
             return true;
         }
+        CLog::Log(LOGINFO, "CDRMUtils::{} - GUI plane format {} is not supported",
+                __FUNCTION__, DRMHELPERS::FourCCToString(formatmap.dformat.fourcc));
+
     }
 
-    CLog::Log(LOGERROR, "CDRMUtils::{} - No 10bit nor 8bit capable GUI plane found", __FUNCTION__);
+    CLog::Log(LOGERROR, "CDRMUtils::{} - GUI plane not found", __FUNCTION__);
     return false;
 }
 

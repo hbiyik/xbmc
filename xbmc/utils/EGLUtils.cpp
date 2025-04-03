@@ -281,7 +281,7 @@ bool CEGLContextUtils::InitializeDisplay(EGLint renderingApi)
   return true;
 }
 
-bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool hdr)
+bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool hdr, int red, int green, int blue, int alpha)
 {
   EGLint numMatched{0};
 
@@ -298,10 +298,10 @@ bool CEGLContextUtils::ChooseConfig(EGLint renderableType, EGLint visualId, bool
     surfaceType |= EGL_SWAP_BEHAVIOR_PRESERVED_BIT;
 
   CEGLAttributesVec attribs;
-  attribs.Add({{EGL_RED_SIZE, 8},
-               {EGL_GREEN_SIZE, 8},
-               {EGL_BLUE_SIZE, 8},
-               {EGL_ALPHA_SIZE, 2},
+  attribs.Add({{EGL_RED_SIZE, red},
+               {EGL_GREEN_SIZE, green},
+               {EGL_BLUE_SIZE, blue},
+               {EGL_ALPHA_SIZE, alpha},
                {EGL_DEPTH_SIZE, 16},
                {EGL_STENCIL_SIZE, 0},
                {EGL_SAMPLE_BUFFERS, 0},
