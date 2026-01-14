@@ -46,7 +46,7 @@ uint32_t GetScalingFactor(uint32_t srcWidth,
 
 bool CDRMAtomic::SetScalingFilter(CDRMObject* object, const char* name, const char* type)
 {
-  std::optional<uint64_t> scalingFilter = m_gui_plane->GetPropertyValue(name, type);
+  std::optional<uint64_t> scalingFilter = m_gui_plane->GetPropertyEnumValue(name, type);
   if (!scalingFilter)
     return false;
 
