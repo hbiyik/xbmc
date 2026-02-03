@@ -161,8 +161,8 @@ bool CDRMUtils::FindGuiPlane(uint32_t format, uint64_t modifier)
 
   if (gui_format == m_gui_formats.end())
   {
-    CLog::LogF(LOGERROR, "CDRMUtils::{} - Requested format {} for gui plane is not supported",
-               __FUNCTION__, DRMHELPERS::FourCCToString(format));
+    CLog::LogF(LOGERROR, "Requested format {} for gui plane is not supported", __FUNCTION__,
+               DRMHELPERS::FourCCToString(format));
     return false;
   }
 
@@ -181,18 +181,15 @@ bool CDRMUtils::FindGuiPlane(uint32_t format, uint64_t modifier)
       m_old_crtc = m_crtc;
       m_crtc = crtc;
       m_gui_plane = plane.get();
-      CLog::LogF(
-          LOGINFO,
-          "CDRMUtils::{} - Using gui plane [{}x{}] id:{}, format:{}, modifier:{}, crtc id:{}",
-          __FUNCTION__, res.iWidth, res.iHeight, m_gui_plane->GetId(),
-          DRMHELPERS::FourCCToString(format), DRMHELPERS::ModifierToString(modifier),
-          m_crtc->GetId());
+      CLog::LogF(LOGINFO, "Using gui plane [{}x{}] id:{}, format:{}, modifier:{}, crtc id:{}",
+                 __FUNCTION__, res.iWidth, res.iHeight, m_gui_plane->GetId(),
+                 DRMHELPERS::FourCCToString(format), DRMHELPERS::ModifierToString(modifier),
+                 m_crtc->GetId());
       return true;
     }
   }
 
-  CLog::LogF(LOGERROR,
-             "CDRMUtils::{} - Requested format {} and modifier {} for gui plane is not supported",
+  CLog::LogF(LOGERROR, "Requested format {} and modifier {} for gui plane is not supported",
              __FUNCTION__, DRMHELPERS::FourCCToString(format),
              DRMHELPERS::ModifierToString(modifier));
 
@@ -214,7 +211,7 @@ bool CDRMUtils::FindVideoAndGuiPlane(uint32_t format,
     if (!gui_format.alpha)
     {
       CLog::LogF(LOGWARNING,
-                 "CDRMUtils::{} - GUI plane format {} can not do alpha blending, "
+                 "GUI plane format {} can not do alpha blending, "
                  "video will be rendered through EGL import over the gui plane",
                  __FUNCTION__, DRMHELPERS::FourCCToString(m_gui_plane->GetFormat()));
       m_video_plane = nullptr;
@@ -258,7 +255,7 @@ bool CDRMUtils::FindVideoAndGuiPlane(uint32_t format,
         m_video_plane = video_plane.get();
 
         CLog::LogF(LOGINFO,
-                   "CDRMUtils::{} - Using gui plane [{}x{}] id:{}, video plane [{}x{}] id:{} on "
+                   "Using gui plane [{}x{}] id:{}, video plane [{}x{}] id:{} on "
                    "crtc id:{} for video format:{}, video modifier:{}",
                    __FUNCTION__, res.iWidth, res.iHeight, m_gui_plane->GetId(), width, height,
                    m_video_plane->GetId(), m_crtc->GetId(), DRMHELPERS::FourCCToString(format),
@@ -269,7 +266,7 @@ bool CDRMUtils::FindVideoAndGuiPlane(uint32_t format,
   }
 
   CLog::LogF(LOGWARNING,
-             "CDRMUtils::{} - Rendering will be done through EGL. "
+             "Rendering will be done through EGL. "
              "Can not find a Video Plane [{}x{}] format:{}, modifier:{} "
              "together with a Gui Plane [{}x{}] format:{}, modifier:{}.",
              __FUNCTION__, res.iWidth, res.iHeight, DRMHELPERS::FourCCToString(format),
@@ -518,7 +515,7 @@ bool CDRMUtils::InitDrm()
       return false;
     }
 
-    CLog::Log(LOGINFO, "CDRMUtils: Successfully authorized drm magic");
+    CLog::LogF(LOGINFO, "Successfully authorized drm magic");
   }
 
   const PlaneType gui_type = HasQuirk(QUIRK_NEEDSPRIMARY) ? PLANE_TYPE_PRIMARY : PLANE_TYPE_ANY;
@@ -587,7 +584,7 @@ bool CDRMUtils::FindConnector()
     return false;
   }
 
-  CLog::Log(LOGINFO, "CDRMUtils: Using connector: {}", connector->get()->GetName());
+  CLog::LogF(LOGINFO, "Using connector: {}", connector->get()->GetName());
 
   m_connector = connector->get();
   return true;
@@ -605,7 +602,7 @@ bool CDRMUtils::FindEncoder()
     return false;
   }
 
-  CLog::Log(LOGINFO, "CDRMUtils: Using encoder: {}", encoder->get()->GetEncoderId());
+  CLog::LogF(LOGINFO, "Using encoder: {}", encoder->get()->GetEncoderId());
 
   m_encoder = encoder->get();
   return true;
